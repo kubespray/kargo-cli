@@ -145,8 +145,8 @@ class RunPlaybook(object):
             '-b', '--become-user=root', '-i', self.inventorycfg,
             os.path.join(self.options['kargo_path'], 'cluster.yml')
         ]
-        if 'ansible-opts' in self.options.keys():
-            cmd = cmd + self.options['ansible-opts'].split(' ')
+        if 'ansible_opts' in self.options.keys():
+            cmd = cmd + self.options['ansible_opts'].split(' ')
         for cloud in ['aws', 'gce']:
             if self.options[cloud]:
                 cmd = cmd + ['-e', 'cloud_provider=%s' % cloud]
