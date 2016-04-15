@@ -174,6 +174,8 @@ class RunPlaybook(object):
         # Add any additionnal Ansible option
         if 'ansible_opts' in self.options.keys():
             cmd = cmd + self.options['ansible_opts'].split(' ')
+        if 'ansible_opts' in self.options.keys():
+            cmd = cmd + self.options['ansible_opts'].split(' ')
         for cloud in ['aws', 'gce']:
             if self.options[cloud]:
                 cmd = cmd + ['-e', 'cloud_provider=%s' % cloud]
