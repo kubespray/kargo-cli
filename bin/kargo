@@ -92,15 +92,23 @@ if __name__ == '__main__':
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument(
         '-p', '--path', dest='kargo_path',
-        help='Where the Ansible playbooks are installed'
+        help='Where the Ansible playbooks are installed. Default: ~/.kargo'
     )
-    parent_parser.add_argument('--config', dest='configfile', help="Config file")
+    parent_parser.add_argument(
+      '--config', dest='configfile',
+      help="Config file path. Defaults to /etc/kargo/kargo.yml"
+    )
     parent_parser.add_argument(
         '-y', '--assumeyes', default=False, dest='assume_yes', action='store_true',
         help='When a yes/no prompt would be presented, assume that the user entered "yes"'
     )
     parent_parser.add_argument(
-        '-i', '--inventory', dest='inventory_path', help='Inventory file path'
+        '-i', '--inventory', dest='inventory_path',
+        help='Inventory file path. Defaults to <path parameter>/inventory/inventory.cfg'
+    )
+    parent_parser.add_argument(
+        '-l', '--logfile', dest='logfile',
+        help='Log file path. Defaults to <path parameter>/kargo.log'
     )
 
     # prepare
@@ -134,8 +142,7 @@ if __name__ == '__main__':
     )
     aws_parser.add_argument('--region', dest='region', help='AWS region')
     aws_parser.add_argument(
-        '--security-group', dest='group',
-        help='AWS security group ID. Uses the "default" security group if not specified.'
+        '--security-group', dest='group', help='AWS security group ID. Uses the "default" security group if not specified.'
     )
     aws_parser.add_argument(
         '--assign-public-ip', default=None, dest='assign_public_ip', action='store_true',
@@ -145,9 +152,9 @@ if __name__ == '__main__':
         '--use-private-ip', default=None, dest='use_private_ip', action='store_true',
          help='If set to true, using the private ip for SSH connection'
     )
-    aws_parser.add_argument('--vpc-id', dest='aws_vpc_id', help='EC2 VPC id')
+    aws_parser.add_argument('--vpc-id', dest='aws_vpc_id', help='EC2 VPC ID')
     aws_parser.add_argument(
-        '--vpc-subnet-id', dest='vpc_subnet_id', help='EC2 VPC regional subnet'
+        '--vpc-subnet-id', dest='vpc_subnet_id', help='EC2 VPC subnet ID'
     )
     aws_parser.add_argument('--ami', dest='ami', help='AWS AMI')
     aws_parser.add_argument(
@@ -307,7 +314,7 @@ if __name__ == '__main__':
     config = C.parse_configfile
     # Set kargo_path
     if 'kargo_path' not in config.keys() and args.kargo_path is None:
-        config['kargo_path'] = os.path.join(os.path.expanduser("~"), 'kargo')
+        config['kargo_path'] = os.path.join(os.path.expanduser("~"), '.kargo')
     arguments = dict(args._get_kwargs())
     for key, value in arguments.items():
         if value is not None:
