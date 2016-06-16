@@ -148,7 +148,7 @@ class AWS(Cloud):
                 k, v = kv.split("=")
                 self.options['instance_tags'][k] = v
         ec2_options = [
-            'aws_access_key', 'aws_secret_key', 'count', 'group',
+            'aws_access_key', 'aws_secret_key', 'count', 'security_group',
             'instance_type', 'key_name', 'region', 'vpc_subnet_id',
             'image', 'instance_tags', 'assign_public_ip'
         ]

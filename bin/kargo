@@ -142,7 +142,7 @@ if __name__ == '__main__':
     )
     aws_parser.add_argument('--region', dest='region', help='AWS region')
     aws_parser.add_argument(
-        '--security-group', dest='group', help='AWS security group ID. Uses the "default" security group if not specified.'
+        '--security-group', dest='security_group', help='AWS security group ID. Uses the "default" security group if not specified.'
     )
     aws_parser.add_argument(
         '--assign-public-ip', default=None, dest='assign_public_ip', action='store_true',
