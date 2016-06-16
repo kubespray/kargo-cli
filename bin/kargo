@@ -121,20 +121,21 @@ if __name__ == '__main__':
         'aws', parents=[parent_parser, firststep_parser], help='Create AWS instances and generate inventory'
     )
     aws_parser.add_argument(
-        '--access-key', dest='aws_access_key', help='AWS access key'
+        '--aws-access-key', dest='aws_access_key', help='AWS access key'
     )
     aws_parser.add_argument(
-        '--secret-key', dest='aws_secret_key', help='AWS secret key'
+        '--aws-secret-key', dest='aws_secret_key', help='AWS secret key'
     )
     aws_parser.add_argument(
-        '--type', dest='instance_type', help='AWS instance type'
+        '--instance-type', dest='instance_type', help='AWS instance type'
     )
     aws_parser.add_argument(
-        '--keypair', dest='key_name', help='AWS key pair name'
+        '--key-name', dest='key_name', help='AWS key pair name'
     )
     aws_parser.add_argument('--region', dest='region', help='AWS region')
     aws_parser.add_argument(
-        '--security-group', dest='group', help='AWS security group'
+        '--security-group', dest='group',
+        help='AWS security group ID. Uses the "default" security group if not specified.'
     )
     aws_parser.add_argument(
         '--assign-public-ip', default=None, dest='assign_public_ip', action='store_true',
@@ -146,7 +147,7 @@ if __name__ == '__main__':
     )
     aws_parser.add_argument('--vpc-id', dest='aws_vpc_id', help='EC2 VPC id')
     aws_parser.add_argument(
-        '--vpc-subnet', dest='vpc_subnet_id', help='EC2 VPC regional subnet'
+        '--vpc-subnet-id', dest='vpc_subnet_id', help='EC2 VPC regional subnet'
     )
     aws_parser.add_argument('--ami', dest='ami', help='AWS AMI')
     aws_parser.add_argument(
