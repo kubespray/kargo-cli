@@ -92,15 +92,23 @@ if __name__ == '__main__':
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument(
         '-p', '--path', dest='kargo_path',
-        help='Where the Ansible playbooks are installed'
+        help='Where the Ansible playbooks are installed. Default: ~/.kargo'
     )
-    parent_parser.add_argument('--config', dest='configfile', help="Config file")
+    parent_parser.add_argument(
+      '--config', dest='configfile',
+      help="Config file path. Defaults to /etc/kargo/kargo.yml"
+    )
     parent_parser.add_argument(
         '-y', '--assumeyes', default=False, dest='assume_yes', action='store_true',
         help='When a yes/no prompt would be presented, assume that the user entered "yes"'
     )
     parent_parser.add_argument(
-        '-i', '--inventory', dest='inventory_path', help='Inventory file path'
+        '-i', '--inventory', dest='inventory_path',
+        help='Inventory file path. Defaults to <path parameter>/inventory/inventory.cfg'
+    )
+    parent_parser.add_argument(
+        '-l', '--logfile', dest='logfile',
+        help='Log file path. Defaults to <path parameter>/kargo.log'
     )
 
     # prepare
@@ -121,20 +129,20 @@ if __name__ == '__main__':
         'aws', parents=[parent_parser, firststep_parser], help='Create AWS instances and generate inventory'
     )
     aws_parser.add_argument(
-        '--access-key', dest='aws_access_key', help='AWS access key'
+        '--aws-access-key', dest='aws_access_key', help='AWS access key'
     )
     aws_parser.add_argument(
-        '--secret-key', dest='aws_secret_key', help='AWS secret key'
+        '--aws-secret-key', dest='aws_secret_key', help='AWS secret key'
     )
     aws_parser.add_argument(
-        '--type', dest='instance_type', help='AWS instance type'
+        '--instance-type', dest='instance_type', help='AWS instance type'
     )
     aws_parser.add_argument(
-        '--keypair', dest='key_name', help='AWS key pair name'
+        '--key-name', dest='key_name', help='AWS key pair name'
     )
     aws_parser.add_argument('--region', dest='region', help='AWS region')
     aws_parser.add_argument(
-        '--security-group', dest='group', help='AWS security group'
+        '--security-group', dest='security_group', help='AWS security group ID. Uses the "default" security group if not specified.'
     )
     aws_parser.add_argument(
         '--assign-public-ip', default=None, dest='assign_public_ip', action='store_true',
@@ -144,9 +152,9 @@ if __name__ == '__main__':
         '--use-private-ip', default=None, dest='use_private_ip', action='store_true',
          help='If set to true, using the private ip for SSH connection'
     )
-    aws_parser.add_argument('--vpc-id', dest='aws_vpc_id', help='EC2 VPC id')
+    aws_parser.add_argument('--vpc-id', dest='aws_vpc_id', help='EC2 VPC ID')
     aws_parser.add_argument(
-        '--vpc-subnet', dest='vpc_subnet_id', help='EC2 VPC regional subnet'
+        '--vpc-subnet-id', dest='vpc_subnet_id', help='EC2 VPC subnet ID'
     )
     aws_parser.add_argument('--ami', dest='ami', help='AWS AMI')
     aws_parser.add_argument(
@@ -306,7 +314,7 @@ if __name__ == '__main__':
     config = C.parse_configfile
     # Set kargo_path
     if 'kargo_path' not in config.keys() and args.kargo_path is None:
-        config['kargo_path'] = os.path.join(os.path.expanduser("~"), 'kargo')
+        config['kargo_path'] = os.path.join(os.path.expanduser("~"), '.kargo')
     arguments = dict(args._get_kwargs())
     for key, value in arguments.items():
         if value is not None:

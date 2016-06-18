@@ -142,13 +142,14 @@ class AWS(Cloud):
         data.pop('func')
         # Options list of ansible EC2 module
         self.options['image'] = self.options['ami']
+        self.options['group'] = self.options['security_group']
         if 'tags' in self.options:
             self.options['instance_tags'] = {}
             for kv in self.options['tags']:
                 k, v = kv.split("=")
                 self.options['instance_tags'][k] = v
         ec2_options = [
-            'aws_access_key', 'aws_secret_key', 'count', 'group',
+            'aws_access_key', 'aws_secret_key', 'count', 'group', 'security_group',
             'instance_type', 'key_name', 'region', 'vpc_subnet_id',
             'image', 'instance_tags', 'assign_public_ip'
         ]

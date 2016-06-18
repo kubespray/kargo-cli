@@ -5,9 +5,11 @@
 
 # Default inventory path
 kargo_git_repo: "https://github.com/kubespray/kargo.git"
+kargo_path: "~/.kargo"
 
 # Logging options
 loglevel: "info"
+logfile: "~/.kargo/kargo.log"
 
 # The following options would be overwritten by the command line
 # ---------------------------------------------------------
@@ -19,7 +21,7 @@ loglevel: "info"
 # key_name: "<aws_keypair_name>"
 # ami: "<aws_ami>"
 # instance_type: "<aws_instance_type>"
-# group: "<aws_security_group>"
+# security_group: "<aws_security_group>"
 # assign_public_ip: True
 # vpc_subnet_id: "<aws_vpc_id>"
 # region: "<aws_region>"
