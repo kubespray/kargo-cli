@@ -122,7 +122,7 @@ class RunPlaybook(object):
             '-b', '--become-user=root', '-m', 'ping', 'all',
             '-i', self.inventorycfg
         ]
-        if self.options['sshkey']:
+        if 'sshkey' in self.options.keys():
             cmd = cmd + ['--private-key', self.options['sshkey']]
         if self.options['coreos']:
             cmd = cmd + ['-e', 'ansible_python_interpreter=/opt/bin/python']
