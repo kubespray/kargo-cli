@@ -14,22 +14,27 @@ loglevel: "info"
 #
 # Amazon web services options
 # ---
-# aws_access_key: "<aws_key>"
-# aws_secret_key: "<aws_secret_key>"
-# key_name: "<aws_keypair_name>"
+# aws_access_key: "<key>"
+# aws_secret_key: "<secret_key>"
+# key_name: "<keypair_name>"
 # ami: "<aws_ami>"
-# instance_type: "<aws_instance_type>"
-# group: "<aws_security_group>"
+# masters_instance_type: "<masters_instance_type>"
+# nodes_instance_type: "<nodes_instance_type>"
+# etcds_instance_type: "<etcds_instance_type>"
+# security_group_name: "<security_group_name>"
+# security_group_id: "<security_group_id>"
 # assign_public_ip: True
-# vpc_subnet_id: "<aws_vpc_id>"
+# vpc_subnet_id: "<vpc_id>"
 # region: "<aws_region>"
 # tags:
 #   - type: k8s
 #
 # Google Compute Engine options
 # ---
-# machine_type: "<cloud_machine_type>"
 # image: "<cloud_image>"
+# masters_machine_type: "<masters_type>
+# nodes_machine_type: "<masters_type>
+# etcds_machine_type: "<masters_type>
 # service_account_email: "<gce_service_account_email>"
 # pem_file: "<gce_pem_file>"
 # project_id: "<gce_project_id>"

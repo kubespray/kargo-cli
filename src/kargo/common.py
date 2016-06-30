@@ -58,6 +58,12 @@ def read_password():
     return(pw)
 
 
+def remove_duplicates(seq):
+   noDupes = []
+   [noDupes.append(i) for i in seq if not noDupes.count(i)]
+   return noDupes
+
+
 def query_yes_no(question, default="yes"):
     """Question user input 'Yes' or 'No'"""
     valid = {"yes": True, "y": True, "no": False, "n": False}

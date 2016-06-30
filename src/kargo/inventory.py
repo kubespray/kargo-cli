@@ -3,7 +3,7 @@
 #
 # This file is part of Kargo.
 #
-#    Foobar is free software: you can redistribute it and/or modify
+#    Kargo is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
@@ -25,7 +25,7 @@ Ansible inventory management for Kargo
 
 import sys
 import re
-from kargo.common import get_logger, id_generator, get_cluster_name
+from kargo.common import get_logger, id_generator, get_cluster_name, remove_duplicates
 from ansible.utils.display import Display
 display = Display()
 
@@ -47,14 +47,14 @@ class CfgInventory(object):
         self.logger = get_logger(options.get('logfile'), options.get('loglevel'))
         self.cparser = configparser.ConfigParser(allow_no_value=True)
         self.inventory = {'all': {'hosts': []},
-                         'kube-master': {'hosts': []},
-                         'etcd': {'hosts': []},
-                         'kube-node': {'hosts': []},
-                         'k8s-cluster:children': {'hosts': [
+                          'kube-master': {'hosts': []},
+                          'etcd': {'hosts': []},
+                          'kube-node': {'hosts': []},
+                          'k8s-cluster:children': {'hosts': [
                               {'hostname': 'kube-node', 'hostvars': []},
                               {'hostname': 'kube-master', 'hostvars': []}
-                              ]},
-                        }
+                          ]},
+                          }
 
     def read_inventory(self):
         read_cparser = configparser.ConfigParser(allow_no_value=True)
@@ -62,8 +62,8 @@ class CfgInventory(object):
             read_cparser.read(self.inventorycfg)
         except IOError as e:
             display.error('Cannot read configuration %s: %s'
-                % (self.options['inventory_path'], e)
-            )
+                          % (self.options['inventory_path'], e)
+                          )
             sys.exit(1)
         expected_sections = ['kube-node', 'kube-master', 'all', 'etcd', 'k8s-cluster:children']
         for k in expected_sections:
@@ -74,14 +74,14 @@ class CfgInventory(object):
                 )
                 sys.exit(1)
         current_inventory = {'all': {'hosts': []},
-                         'kube-master': {'hosts': []},
-                         'etcd': {'hosts': []},
-                         'kube-node': {'hosts': []},
-                         'k8s-cluster:children': {'hosts': [
-                              {'hostname': 'kube-node', 'hostvars': []},
-                              {'hostname': 'kube-master', 'hostvars': []}
-                              ]},
-                        }
+                             'kube-master': {'hosts': []},
+                             'etcd': {'hosts': []},
+                             'kube-node': {'hosts': []},
+                             'k8s-cluster:children': {'hosts': [
+                                 {'hostname': 'kube-node', 'hostvars': []},
+                                 {'hostname': 'kube-master', 'hostvars': []}
+                             ]},
+                             }
         for section in current_inventory.keys():
             for line, properties_str in read_cparser.items(section):
                 machine_part = line.split('#', 1)[0]  # get rid of comments parts
@@ -103,16 +103,17 @@ class CfgInventory(object):
                 current_inventory[section]['hosts'].append(host_dict)
         return(current_inventory)
 
-    def format_inventory(self, instances):
+    def format_inventory(self, masters, nodes, etcds):
         new_inventory = {'all': {'hosts': []},
                          'kube-master': {'hosts': []},
                          'etcd': {'hosts': []},
                          'kube-node': {'hosts': []},
                          'k8s-cluster:children': {'hosts': [
-                              {'hostname': 'kube-node', 'hostvars': []},
-                              {'hostname': 'kube-master', 'hostvars': []}
-                              ]},
-                        }
+                             {'hostname': 'kube-node', 'hostvars': []},
+                             {'hostname': 'kube-master', 'hostvars': []},
+                             {'hostname': 'etcd', 'hostvars': []}
+                             ]},
+                         }
 
         if self.platform == 'openstack':
             if self.options['floating_ip']:
@@ -120,20 +121,23 @@ class CfgInventory(object):
             else:
                 ip_type = 'private_v4'
             new_instances = []
-            for node in instances['results']:
+            for node in nodes['results']:
                 new_instances.append({'public_ip': node['openstack'][ip_type],
                                       'name': node['item']})
-            instances = new_instances
+            nodes = new_instances
 
         if not self.options['add_node']:
-            if len(instances) > 1:
-                k8s_masters = instances[0:2]
-            else:
-                k8s_masters = [instances[0]]
-            if len(instances) > 2:
-                etcd_members = instances[0:3]
-            else:
-                etcd_members = [instances[0]]
+            if not masters and len(nodes) == 1:
+                masters = [nodes[0]]
+            elif not masters:
+                masters = nodes[0:2]
+            if not etcds and len(nodes) >= 3:
+                etcds = nodes[0:3]
+            elif not etcds and len(nodes) < 3:
+                etcds = [nodes[0]]
+            elif etcds and len(etcds) < 3:
+                etcds = [etcds[0]]
+
         if self.platform in ['aws', 'gce', 'openstack']:
             if self.options['add_node']:
                 current_inventory = self.read_inventory()
@@ -147,6 +151,7 @@ class CfgInventory(object):
                 instance_ip = 'private_ip'
             else:
                 instance_ip = 'public_ip'
+            instances = remove_duplicates((nodes or []) + (masters or []) + (etcds or []))
             for host in instances:
                 if self.platform == 'aws':
                     host['name'] = "%s-%s" % (cluster_name, id_generator(5))
@@ -155,23 +160,24 @@ class CfgInventory(object):
                         {'name': 'ansible_ssh_host', 'value': host[instance_ip]}
                         ]}
                 )
-                new_inventory['kube-node']['hosts'].append(
-                    {'hostname': '%s' % host['name'],
-                     'hostvars': []}
-                )
             if not self.options['add_node']:
-                for host in k8s_masters:
+                for host in nodes:
+                    new_inventory['kube-node']['hosts'].append(
+                        {'hostname': '%s' % host['name'],
+                         'hostvars': []}
+                    )
+                for host in masters:
                     new_inventory['kube-master']['hosts'].append(
                         {'hostname': '%s' % host['name'],
                          'hostvars': []}
                     )
-                for host in etcd_members:
+                for host in etcds:
                     new_inventory['etcd']['hosts'].append(
                         {'hostname': '%s' % host['name'],
                          'hostvars': []}
                     )
         elif self.platform == 'metal':
-            for host in instances:
+            for host in nodes + masters + etcds:
                 r = re.search('(^.*)\[(.*)\]', host)
                 inventory_hostname = r.group(1)
                 var_str = r.group(2)
@@ -181,26 +187,29 @@ class CfgInventory(object):
                 new_inventory['all']['hosts'].append(
                     {'hostname': inventory_hostname, 'hostvars': hostvars}
                 )
+            for host in nodes:
                 new_inventory['kube-node']['hosts'].append(
                     {'hostname': inventory_hostname, 'hostvars': []}
                 )
-            for host in k8s_masters:
+            for host in masters:
                 new_inventory['kube-master']['hosts'].append(
                     {'hostname': host.split('[')[0], 'hostvars': []}
                 )
-            for host in etcd_members:
+            for host in etcds:
                 new_inventory['etcd']['hosts'].append(
                     {'hostname': host.split('[')[0], 'hostvars': []}
                 )
         return(new_inventory)
 
-    def write_inventory(self, instances):
+    def write_inventory(self, masters, nodes, etcds):
         '''Generates inventory'''
-        inventory = self.format_inventory(instances)
+        inventory = self.format_inventory(masters, nodes, etcds)
         if not self.options['add_node']:
-            if len(instances) < 2:
+            if (('masters_count' in self.options.keys() and len(masters) < 2) or
+               ('masters_count' not in self.options.keys() and len(nodes) < 2)):
                 display.warning('You should set at least 2 masters')
-            if len(instances) < 3:
+            if (('etcds_count' in self.options.keys() and len(etcds) < 3) or
+               ('etcds_count' not in self.options.keys() and len(nodes) < 3)):
                 display.warning('You should set at least 3 nodes for etcd clustering')
         open(self.inventorycfg, 'w').close()
         for key, value in inventory.items():

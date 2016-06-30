@@ -3,7 +3,7 @@
 #
 # This file is part of Kargo.
 #
-#    Foobar is free software: you can redistribute it and/or modify
+#    Kargo is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
@@ -16,7 +16,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = '0.3.10'
+__version__ = '0.4.0'
 
 import os
 import argparse
@@ -109,9 +109,18 @@ if __name__ == '__main__':
         help='generate inventory and create vms on cloud providers'
     )
     prepare_parser.add_argument('--add', dest='add_node', action='store_true',
-        help="Add node to an existing cluster")
+        help="Add node to an existing cluster"
+    )
     prepare_parser.add_argument(
-        '--nodes', dest='k8s_nodes', metavar='N', nargs='+',
+        '--etcds', dest='etcds_list', metavar='N', nargs='+',
+        help='Number of etcd, these instances will just act as etcd members'
+    )
+    prepare_parser.add_argument(
+        '--masters', dest='masters_list', metavar='N', nargs='+',
+        help='Number of masters, these instances will not run workloads, master components only'
+    )
+    prepare_parser.add_argument(
+        '--nodes', dest='nodes_list', metavar='N', nargs='+',
         required=True, help='List of nodes'
     )
     prepare_parser.set_defaults(func=prepare)
@@ -127,14 +136,24 @@ if __name__ == '__main__':
         '--secret-key', dest='aws_secret_key', help='AWS secret key'
     )
     aws_parser.add_argument(
-        '--type', dest='instance_type', help='AWS instance type'
+        '--masters-instance-type', dest='masters_instance_type', help='AWS instance type for Masters (default: t2.medium)'
+    )
+    aws_parser.add_argument(
+        '--nodes-instance-type', dest='nodes_instance_type', help='AWS instance type for Nodes (default: t2.large)'
+    )
+    aws_parser.add_argument(
+        '--etcds-instance-type', dest='etcds_instance_type', help='AWS instance type for Etcd members (default: t2.small)'
     )
     aws_parser.add_argument(
         '--keypair', dest='key_name', help='AWS key pair name'
     )
     aws_parser.add_argument('--region', dest='region', help='AWS region')
-    aws_parser.add_argument(
-        '--security-group', dest='group', help='AWS security group'
+    sg_group = aws_parser.add_mutually_exclusive_group()
+    sg_group.add_argument(
+        '--security-group-name', dest='security_group_name', help='AWS security group Name'
+    )
+    sg_group.add_argument(
+        '--security-group-id', dest='security_group_id', help='AWS security group ID'
     )
     aws_parser.add_argument(
         '--assign-public-ip', default=None, dest='assign_public_ip', action='store_true',
@@ -158,7 +177,15 @@ if __name__ == '__main__':
     aws_parser.add_argument('--add', dest='add_node', action='store_true',
         help="Add node to an existing cluster")
     aws_parser.add_argument(
-        '--instances', dest='count', type=int,
+        '--etcd', dest='etcds_count', type=int,
+        help='Number of etcd, these instances will just act as etcd members'
+    )
+    aws_parser.add_argument(
+        '--masters', dest='masters_count', type=int,
+        help='Number of masters, these instances will not run workloads, master components only'
+    )
+    aws_parser.add_argument(
+        '--nodes', dest='nodes_count', type=int,
         help='Number of nodes', required=True
     )
     aws_parser.set_defaults(func=aws)
@@ -175,7 +202,13 @@ if __name__ == '__main__':
         '--zone', dest='zone', help='GCE zone'
     )
     gce_parser.add_argument(
-        '--type', dest='machine_type', help='GCE machine type'
+        '--masters-machine-type', dest='masters_machine_type', help='GCE machine type for Masters (default: n1-standard-2)'
+    )
+    gce_parser.add_argument(
+        '--nodes-machine-type', dest='nodes_machine_type', help='GCE machine type for Nodes (default: n1-standard-4)'
+    )
+    gce_parser.add_argument(
+        '--etcds-machine-type', dest='etcds_machine_type', help='GCE machine type for Etcd members (default: n1-standard-1)'
     )
     gce_parser.add_argument('--image', dest='image', help='GCE image')
     gce_parser.add_argument(
@@ -193,7 +226,15 @@ if __name__ == '__main__':
     gce_parser.add_argument('--add', dest='add_node', action='store_true',
         help="Add node to an existing cluster")
     gce_parser.add_argument(
-        '--instances', dest='count', type=int,
+        '--etcds', dest='etcds_count', type=int,
+        help='Number of etcd, these instances will just act as etcd members'
+    )
+    gce_parser.add_argument(
+        '--masters', dest='masters_count', type=int,
+        help='Number of masters, these instances will not run workloads, master components only'
+    )
+    gce_parser.add_argument(
+        '--nodes', dest='nodes_count', type=int,
         help='Number of nodes', required=True
     )
     gce_parser.set_defaults(func=gce)
@@ -216,7 +257,15 @@ if __name__ == '__main__':
         '--os_password', dest='os_password', help='OpenStack Password'
     )
     openstack_parser.add_argument(
-        '--instances', dest='count', type=int,
+        '--etcds', dest='etcds_count', type=int,
+        help='Number of etcd, these instances will just act as etcd members'
+    )
+    openstack_parser.add_argument(
+        '--masters', dest='masters_count', type=int,
+        help='Number of masters, these instances will not run workloads, master components only'
+    )
+    openstack_parser.add_argument(
+        '--nodes', dest='nodes_count', type=int,
         help='Number of nodes', required=True
     )
     openstack_parser.add_argument(
@@ -235,7 +284,13 @@ if __name__ == '__main__':
         '--network', dest='network', help='Neutron network name'
     )
     openstack_parser.add_argument(
-        '--flavor', dest='flavor', help='OpenStack instance flavor'
+        '--masters-flavor', dest='masters_flavor', help='OpenStack instance flavor for Masters'
+    )
+    openstack_parser.add_argument(
+        '--nodes-flavor', dest='nodes_flavor', help='OpenStack instance flavor for Nodes'
+    )
+    openstack_parser.add_argument(
+        '--etcds-flavor', dest='etcds_flavor', help='OpenStack instance flavor for Etcd members'
     )
     openstack_parser.add_argument('--image', dest='image', help='Instance boot image')
     openstack_parser.add_argument(
@@ -303,30 +358,8 @@ if __name__ == '__main__':
         args.configfile = '/etc/kargo/kargo.yml'
     # Read configfile and update options dict
     C = Config(args.configfile)
-    config = C.parse_configfile
-    # Set kargo_path
-    if 'kargo_path' not in config.keys() and args.kargo_path is None:
-        config['kargo_path'] = os.path.join(os.path.expanduser("~"), 'kargo')
-    arguments = dict(args._get_kwargs())
-    for key, value in arguments.items():
-        if value is not None:
-            config[key] = value
-    # Set inventory_path
-    if 'inventory_path' not in config.keys() and args.inventory_path is None:
-        config['inventory_path'] = os.path.join(
-            config['kargo_path'], 'inventory/inventory.cfg'
-        )
-    # Set logfile
-    if 'logfile' not in config.keys():
-        config['logfile'] = os.path.join(config['kargo_path'], 'kargo.log')
-    # Set default bool
-    for v in ['use_private_ip', 'assign_public_ip']:
-        if v not in config.keys():
-            config[v] = False
-    # Set kubernetes 'kube' password
-    if 'prompt_pwd' in config.keys() and config['prompt_pwd'] is True:
-        pwd = read_password()
-        config['k8s_passwd'] = pwd
+    configfile_content = C.parse_configfile
+    config = C.default_values(args, configfile_content)
     # Run functions with all the options
     os.environ['ANSIBLE_FORCE_COLOR'] = 'true'
     args.func(config)
