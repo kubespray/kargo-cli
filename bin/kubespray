@@ -29,6 +29,7 @@ from kubespray.common import clone_kubespray_git_repo
 from kubespray.configure import Config
 from kubespray.inventory import CfgInventory
 from kubespray.deploy import RunPlaybook
+from kubespray.reset import RunResetPlaybook
 from kubespray.cloud import AWS, GCE, OpenStack
 display = Display()
 
@@ -42,6 +43,10 @@ def prepare(options):
         options['etcds_list']
     )
 
+def reset(options):
+    RunReset = RunResetPlaybook(options)
+    RunReset.ssh_prepare()
+    RunReset.reset_kubernetes()
 
 def aws(options):
     clone_kubespray_git_repo(options)
@@ -405,6 +410,39 @@ if __name__ == '__main__':
         help='Ansible options'
     )
     deploy_parser.set_defaults(func=deploy)
+
+
+    # reset
+    reset_parser = subparsers.add_parser(
+    'reset', parents=[parent_parser],
+    help='reset generate inventory'
+    )
+    reset_parser.add_argument(
+        '--verbose', default=False, action='store_true',
+        help="Run Ansible playbook in verbose mode '-vvvv'"
+    )
+    reset_parser.add_argument(
+        '-k', '--sshkey', dest='ssh_key',
+        help='ssh key for authentication on remote servers'
+    )
+    reset_parser.add_argument(
+        '-K', '--ask-become-pass', default=False, action='store_true', dest='ask_become_pass',
+        help='ask for privilege escalation password'
+    )
+    reset_parser.add_argument(
+        '-u', '--user', dest='ansible_user', default=getpass.getuser(),
+        help='Ansible SSH user (remote user)'
+    )
+    reset_parser.add_argument(
+        '--coreos', default=False, action='store_true',
+        help='bootstrap python on CoreOS'
+    )
+    reset_parser.add_argument(
+        '--ansible-opts', dest='ansible_opts',
+        help='Ansible options'
+    )
+    reset_parser.set_defaults(func=reset)
+
 
     # Parse arguments
     args = parser.parse_args()
