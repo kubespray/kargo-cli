@@ -120,7 +120,7 @@ The hostvars must be separated by a **comma without spaces**
 In order to create vms on AWS you can either edit the config file *~/.kubespray.yml* or set the options with the argument **aws**
 if the config file is filled with the proper information you just need to run the following command
 
-    kubespray aws --nodes 3 [--etcds N+] [masters N+] [--nodes-instance-type m4.large]
+    kubespray aws --nodes 3 [--etcds N+] [--masters N+] [--nodes-instance-type m4.large]
 
 Another example which download kubespray's repo in a defined directory and set the cluster name
 
